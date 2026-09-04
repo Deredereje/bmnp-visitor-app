@@ -1,0 +1,744 @@
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+
+void main() => runApp(const BMNPApp());
+
+class BMNPApp extends StatelessWidget {
+  const BMNPApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'BMNP Visitor Registration',
+      theme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: const Color(0xFF1F6B4F),
+        scaffoldBackgroundColor: const Color(0xFFF5F7F5),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+      home: const DashboardScreen(),
+    );
+  }
+}
+
+class Registration {
+  final String id;
+  final DateTime arrival;
+  final DateTime departure;
+  final int adultsMale;
+  final int adultsFemale;
+  final int childrenMale;
+  final int childrenFemale;
+  final String nationality;
+  final double total;
+  final String purpose;
+
+  Registration({
+    required this.id,
+    required this.arrival,
+    required this.departure,
+    required this.adultsMale,
+    required this.adultsFemale,
+    required this.childrenMale,
+    required this.childrenFemale,
+    required this.nationality,
+    required this.total,
+    required this.purpose,
+  });
+
+  int get visitors =>
+      adultsMale + adultsFemale + childrenMale + childrenFemale;
+}
+
+final List<Registration> registrations = [];
+
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  @override
+  Widget build(BuildContext context) {
+    final visitorCount =
+        registrations.fold<int>(0, (sum, r) => sum + r.visitors);
+    final revenue =
+        registrations.fold<double>(0, (sum, r) => sum + r.total);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('BMNP'),
+        actions: [
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(Icons.sync),
+            tooltip: 'Sync',
+          ),
+        ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async => setState(() {}),
+        child: ListView(
+          padding: const EdgeInsets.all(18),
+          children: [
+            const Text(
+              'BALE MOUNTAINS',
+              style: TextStyle(fontSize: 25, fontWeight: FontWeight.w800),
+            ),
+            Text(
+              'National Park Visitor Management',
+              style: TextStyle(color: Colors.grey.shade700),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                _StatCard(
+                  icon: Icons.groups,
+                  title: "Today's Visitors",
+                  value: '$visitorCount',
+                ),
+                const SizedBox(width: 12),
+                _StatCard(
+                  icon: Icons.payments,
+                  title: 'Revenue',
+                  value: '${revenue.toStringAsFixed(0)} ETB',
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            FilledButton.icon(
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const RegistrationWizard(),
+                  ),
+                );
+                setState(() {});
+              },
+              icon: const Icon(Icons.person_add_alt_1),
+              label: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 15),
+                child: Text('REGISTER NEW VISITOR'),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Recent registrations',
+              style: TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            if (registrations.isEmpty)
+              const _EmptyState()
+            else
+              ...registrations.reversed.take(10).map(
+                    (r) => Card(
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          child: Text('${r.visitors}'),
+                        ),
+                        title: Text(r.id),
+                        subtitle: Text(
+                          '${DateFormat('dd MMM').format(r.arrival)} • ${r.purpose}',
+                        ),
+                        trailing: Text(
+                          '${r.total.toStringAsFixed(0)} ETB',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String value;
+  const _StatCard({
+    required this.icon,
+    required this.title,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(15),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon),
+              const SizedBox(height: 12),
+              Text(title, style: TextStyle(color: Colors.grey.shade700)),
+              const SizedBox(height: 5),
+              FittedBox(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  const _EmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          children: [
+            Icon(Icons.receipt_long, size: 45, color: Colors.grey.shade500),
+            const SizedBox(height: 10),
+            const Text('No registrations yet'),
+            const SizedBox(height: 5),
+            Text(
+              'Tap Register New Visitor to create the first record.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class RegistrationWizard extends StatefulWidget {
+  const RegistrationWizard({super.key});
+
+  @override
+  State<RegistrationWizard> createState() => _RegistrationWizardState();
+}
+
+class _RegistrationWizardState extends State<RegistrationWizard> {
+  int step = 0;
+  DateTime arrival = DateTime.now();
+  DateTime departure = DateTime.now().add(const Duration(days: 2));
+  String purpose = 'Tourism';
+  String nationality = 'Ethiopia';
+  String residence = '';
+  String organization = '';
+  String accommodation = 'Campsite';
+  String campsite = 'Dinsho';
+  String lodge = '';
+  String guide = '';
+  String cook = '';
+  String attendant = '';
+  String ranger = '';
+  String vehicle = '';
+  String vehicleNo = '';
+  int adultMale = 1, adultFemale = 1, childMale = 0, childFemale = 0;
+  int porters = 0, horses = 0;
+
+  final Map<String, double> fees = {
+    'Entrance': 0,
+    'Parking': 0,
+    'Tent ground': 0,
+    'Guide': 0,
+    'Cook': 0,
+    'Porters': 0,
+    'Horse rent': 0,
+    'Camp attendant': 0,
+    'Car': 0,
+    'Food & Beverage': 0,
+    'Ranger': 0,
+  };
+
+  final TextEditingController residenceController = TextEditingController();
+  final TextEditingController organizationController = TextEditingController();
+  final TextEditingController lodgeController = TextEditingController();
+  final TextEditingController vehicleController = TextEditingController();
+  final TextEditingController phoneController = TextEditingController();
+
+  int get totalVisitors =>
+      adultMale + adultFemale + childMale + childFemale;
+
+  double get totalPaid =>
+      fees.values.fold<double>(0, (sum, amount) => sum + amount);
+
+  Future<void> pickDate(bool isArrival) async {
+    final selected = await showDatePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2100),
+      initialDate: isArrival ? arrival : departure,
+    );
+    if (selected != null) {
+      setState(() {
+        if (isArrival) {
+          arrival = selected;
+        } else {
+          departure = selected;
+        }
+      });
+    }
+  }
+
+  void next() {
+    if (step < 4) {
+      setState(() => step++);
+    } else {
+      final id =
+          'BMNP-${DateTime.now().year}-${(registrations.length + 1).toString().padLeft(4, '0')}';
+      registrations.add(
+        Registration(
+          id: id,
+          arrival: arrival,
+          departure: departure,
+          adultsMale: adultMale,
+          adultsFemale: adultFemale,
+          childrenMale: childMale,
+          childrenFemale: childFemale,
+          nationality: nationality,
+          total: totalPaid,
+          purpose: purpose,
+        ),
+      );
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ConfirmationScreen(
+            id: id,
+            visitors: totalVisitors,
+            total: totalPaid,
+            arrival: arrival,
+            departure: departure,
+          ),
+        ),
+      );
+    }
+  }
+
+  void back() {
+    if (step == 0) {
+      Navigator.pop(context);
+    } else {
+      setState(() => step--);
+    }
+  }
+
+  Widget counter(
+    String label,
+    int value,
+    void Function(int) onChanged,
+  ) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(label),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton.filledTonal(
+            onPressed: value > 0 ? () => onChanged(value - 1) : null,
+            icon: const Icon(Icons.remove),
+          ),
+          SizedBox(
+            width: 40,
+            child: Center(
+              child: Text(
+                '$value',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ),
+          IconButton.filled(
+            onPressed: () => onChanged(value + 1),
+            icon: const Icon(Icons.add),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget field(
+    String label,
+    TextEditingController controller, {
+    String? hint,
+    TextInputType? type,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: TextField(
+        controller: controller,
+        keyboardType: type,
+        decoration: InputDecoration(labelText: label, hintText: hint),
+      ),
+    );
+  }
+
+  Widget stepBody() {
+    switch (step) {
+      case 0:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _StepTitle('Visit information', 'When and why are visitors entering the park?'),
+            _DateTile('Arrival', arrival, () => pickDate(true)),
+            _DateTile('Departure', departure, () => pickDate(false)),
+            DropdownButtonFormField<String>(
+              value: purpose,
+              decoration: const InputDecoration(labelText: 'Purpose of visit'),
+              items: const [
+                DropdownMenuItem(value: 'Tourism', child: Text('Tourism')),
+                DropdownMenuItem(value: 'Research', child: Text('Research')),
+                DropdownMenuItem(value: 'Business', child: Text('Business')),
+                DropdownMenuItem(value: 'Other', child: Text('Other')),
+              ],
+              onChanged: (v) => setState(() => purpose = v ?? 'Tourism'),
+            ),
+            const SizedBox(height: 14),
+            field('Specific visit places', organizationController,
+                hint: 'e.g. Sanetti Plateau, Harenna Forest'),
+          ],
+        );
+      case 1:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _StepTitle('Visitor information', 'Record the group size and basic details.'),
+            counter('Adult male', adultMale, (v) => setState(() => adultMale = v)),
+            counter('Adult female', adultFemale, (v) => setState(() => adultFemale = v)),
+            const Divider(),
+            counter('Child under 12 — male', childMale, (v) => setState(() => childMale = v)),
+            counter('Child under 12 — female', childFemale, (v) => setState(() => childFemale = v)),
+            const SizedBox(height: 10),
+            Text('Total visitors: $totalVisitors',
+                style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: nationality,
+              decoration: const InputDecoration(labelText: 'Nationality'),
+              items: const [
+                DropdownMenuItem(value: 'Ethiopia', child: Text('Ethiopia')),
+                DropdownMenuItem(value: 'United States', child: Text('United States')),
+                DropdownMenuItem(value: 'United Kingdom', child: Text('United Kingdom')),
+                DropdownMenuItem(value: 'Germany', child: Text('Germany')),
+                DropdownMenuItem(value: 'Other', child: Text('Other')),
+              ],
+              onChanged: (v) => setState(() => nationality = v ?? 'Ethiopia'),
+            ),
+            const SizedBox(height: 14),
+            field('Residence', residenceController),
+            field('Institution / Organization', organizationController),
+          ],
+        );
+      case 2:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _StepTitle('Accommodation', 'Where will the group stay overnight?'),
+            DropdownButtonFormField<String>(
+              value: accommodation,
+              decoration: const InputDecoration(labelText: 'Accommodation type'),
+              items: const [
+                DropdownMenuItem(value: 'Campsite', child: Text('Campsite')),
+                DropdownMenuItem(value: 'Lodge', child: Text('Lodge')),
+                DropdownMenuItem(value: 'Hotel', child: Text('Hotel')),
+                DropdownMenuItem(value: 'Other', child: Text('Other')),
+              ],
+              onChanged: (v) => setState(() => accommodation = v ?? 'Campsite'),
+            ),
+            const SizedBox(height: 14),
+            if (accommodation == 'Campsite')
+              DropdownButtonFormField<String>(
+                value: campsite,
+                decoration: const InputDecoration(labelText: 'Campsite'),
+                items: const [
+                  DropdownMenuItem(value: 'Dinsho', child: Text('Dinsho')),
+                  DropdownMenuItem(value: 'Sodota', child: Text('Sodota')),
+                  DropdownMenuItem(value: 'Other', child: Text('Other')),
+                ],
+                onChanged: (v) => setState(() => campsite = v ?? 'Dinsho'),
+              )
+            else
+              field('Lodge / Hotel name', lodgeController),
+          ],
+        );
+      case 3:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _StepTitle('Park services', 'Assign staff, equipment and transport.'),
+            DropdownButtonFormField<String>(
+              value: guide.isEmpty ? null : guide,
+              decoration: const InputDecoration(labelText: 'Guide'),
+              items: const [
+                DropdownMenuItem(value: 'Guide 001', child: Text('Guide 001')),
+                DropdownMenuItem(value: 'Guide 002', child: Text('Guide 002')),
+              ],
+              onChanged: (v) => setState(() => guide = v ?? ''),
+            ),
+            const SizedBox(height: 14),
+            DropdownButtonFormField<String>(
+              value: cook.isEmpty ? null : cook,
+              decoration: const InputDecoration(labelText: 'Cook'),
+              items: const [
+                DropdownMenuItem(value: 'Cook 001', child: Text('Cook 001')),
+                DropdownMenuItem(value: 'Cook 002', child: Text('Cook 002')),
+              ],
+              onChanged: (v) => setState(() => cook = v ?? ''),
+            ),
+            const SizedBox(height: 8),
+            counter('Porters', porters, (v) => setState(() => porters = v)),
+            counter('Horses', horses, (v) => setState(() => horses = v)),
+            field('Vehicle / Car', vehicleController),
+            field('Vehicle number', phoneController),
+          ],
+        );
+      default:
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _StepTitle('Payment', 'Enter the amounts actually collected.'),
+            ...fees.keys.map(
+              (key) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: TextField(
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: InputDecoration(
+                    labelText: key,
+                    suffixText: 'ETB',
+                  ),
+                  onChanged: (v) {
+                    fees[key] = double.tryParse(v) ?? 0;
+                    setState(() {});
+                  },
+                ),
+              ),
+            ),
+            const Divider(height: 25),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text('TOTAL PAID',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+                Text(
+                  '${totalPaid.toStringAsFixed(2)} ETB',
+                  style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20),
+                ),
+              ],
+            ),
+          ],
+        );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final labels = ['Visit', 'Visitors', 'Stay', 'Services', 'Payment'];
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Registration • ${step + 1}/5'),
+        leading: IconButton(onPressed: back, icon: const Icon(Icons.arrow_back)),
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 8, 18, 4),
+            child: Row(
+              children: List.generate(
+                5,
+                (i) => Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 2),
+                    height: 5,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      color: i <= step
+                          ? Theme.of(context).colorScheme.primary
+                          : Colors.grey.shade300,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: labels
+                  .map((e) => Text(e, style: const TextStyle(fontSize: 11)))
+                  .toList(),
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(18),
+              children: [stepBody()],
+            ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: SizedBox(
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: next,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    child: Text(step == 4 ? 'COMPLETE REGISTRATION' : 'NEXT'),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepTitle extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  const _StepTitle(this.title, this.subtitle);
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title,
+                style: const TextStyle(fontSize: 25, fontWeight: FontWeight.w800)),
+            const SizedBox(height: 5),
+            Text(subtitle, style: TextStyle(color: Colors.grey.shade700)),
+          ],
+        ),
+      );
+}
+
+class _DateTile extends StatelessWidget {
+  final String label;
+  final DateTime date;
+  final VoidCallback onTap;
+  const _DateTile(this.label, this.date, this.onTap);
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: ListTile(
+          onTap: onTap,
+          leading: const Icon(Icons.calendar_month),
+          title: Text(label),
+          subtitle: Text(DateFormat('dd MMM yyyy').format(date)),
+          trailing: const Icon(Icons.chevron_right),
+        ),
+      );
+}
+
+class ConfirmationScreen extends StatelessWidget {
+  final String id;
+  final int visitors;
+  final double total;
+  final DateTime arrival;
+  final DateTime departure;
+
+  const ConfirmationScreen({
+    super.key,
+    required this.id,
+    required this.visitors,
+    required this.total,
+    required this.arrival,
+    required this.departure,
+  });
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(title: const Text('Registration complete')),
+        body: Padding(
+          padding: const EdgeInsets.all(22),
+          child: Column(
+            children: [
+              const SizedBox(height: 35),
+              CircleAvatar(
+                radius: 38,
+                child: const Icon(Icons.check, size: 45),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'REGISTRATION COMPLETE',
+                style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 22),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      Text(id,
+                          style: const TextStyle(
+                              fontSize: 19, fontWeight: FontWeight.bold)),
+                      const Divider(height: 28),
+                      _line('Visitors', '$visitors'),
+                      _line('Arrival', DateFormat('dd MMM yyyy').format(arrival)),
+                      _line('Departure', DateFormat('dd MMM yyyy').format(departure)),
+                      const Divider(height: 28),
+                      _line('Total paid', '${total.toStringAsFixed(2)} ETB',
+                          bold: true),
+                    ],
+                  ),
+                ),
+              ),
+              const Spacer(),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.popUntil(
+                    context,
+                    (route) => route.isFirst,
+                  ),
+                  icon: const Icon(Icons.home),
+                  label: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    child: Text('BACK TO DASHBOARD'),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+  Widget _line(String a, String b, {bool bold = false}) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(a),
+            Text(b,
+                style: TextStyle(
+                    fontWeight: bold ? FontWeight.w900 : FontWeight.w600)),
+          ],
+        ),
+      );
+}
