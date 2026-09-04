@@ -1,0 +1,29 @@
+name: Prepare BMNP project
+
+on:
+  workflow_dispatch:
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Get repository
+        uses: actions/checkout@v4
+
+      - name: Extract BMNP project
+        run: |
+          unzip -o bmnp_visitor_app_cloud_build.zip -d /tmp/bmnp
+          cp -a /tmp/bmnp/. .
+          rm -f bmnp_visitor_app_cloud_build.zip
+
+      - name: Save project files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Add BMNP Flutter project" || exit 0
+          git push
